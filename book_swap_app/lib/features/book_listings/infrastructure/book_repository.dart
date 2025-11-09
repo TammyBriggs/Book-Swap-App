@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:book_swap_app/features/book_listings/domain/book.dart';
-import 'package:book_swap_app/secrets.dart';
-import '../domain/swap_offer.dart';
+import 'package:book_swap_app/features/book_listings/domain/swap_offer.dart';
+import 'package:book_swap_app/secrets.dart'; // Import your secrets
 
 class BookRepository {
   final FirebaseFirestore _firestore;
@@ -14,13 +13,82 @@ class BookRepository {
   BookRepository(this._firestore)
       : _cloudinary = CloudinaryPublic(
     kCloudinaryCloudName,
-    kCloudinaryUploadPreset,
+    kCloudinaryUploadPreset, // Use the upload preset here
     cache: false,
   );
+
+  // Collection reference for books
+  CollectionReference<Map<String, dynamic>> get _booksCollection =>
+      _firestore.collection('books');
 
   // Collection reference for swaps
   CollectionReference<Map<String, dynamic>> get _swapsCollection =>
       _firestore.collection('swaps');
+
+  /// Uploads an image to Cloudinary and returns the secure URL.
+  Future<String> _uploadImage(XFile image) async {
+    try {
+      CloudinaryResponse response = await _cloudinary.uploadFile(
+        CloudinaryFile.fromFile(
+          image.path,
+          resourceType: CloudinaryResourceType.Image,
+          folder: 'book_covers', // Optional: Organize in a folder
+        ),
+      );
+      return response.secureUrl;
+    } on CloudinaryException catch (e) {
+      throw Exception('Image upload failed: ${e.message}');
+    } catch (e) {
+      throw Exception('Image upload failed: $e');
+    }
+  }
+
+  /// Creates a new book listing.
+  Future<void> postBook(Book book, XFile imageFile) async {
+    try {
+      // 1. Upload image first
+      final imageUrl = await _uploadImage(imageFile);
+
+      // 2. Add image URL to book object
+      final bookWithImage = book.copyWith(imageUrl: imageUrl);
+
+      // 3. Save to Firestore
+      await _booksCollection.add(bookWithImage.toJson());
+    } catch (e) {
+      throw Exception('Failed to post book: $e');
+    }
+  }
+
+  /// READ: Get all available books (for Browse screen)
+  Stream<List<Book>> getAvailableBooks() {
+    return _booksCollection
+        .where('status', isEqualTo: 'Available')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Book.fromFirestore(doc)).toList();
+    });
+  }
+
+  /// READ: Get books by a specific owner (for My Listings screen)
+  Stream<List<Book>> getBooksByOwner(String ownerId) {
+    return _booksCollection
+        .where('ownerId', isEqualTo: ownerId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Book.fromFirestore(doc)).toList();
+    });
+  }
+
+  /// Deletes a book listing.
+  Future<void> deleteBook(String bookId) async {
+    try {
+      await _booksCollection.doc(bookId).delete();
+    } catch (e) {
+      throw Exception('Failed to delete book: $e');
+    }
+  }
 
   /// Requests a swap for a book.
   /// This performs a batch write to update the book's status
@@ -80,88 +148,28 @@ class BookRepository {
   }
 
   /// Updates the status of a swap offer (Accept / Reject)
-  Future<void> updateSwapStatus(String swapId, SwapStatus newStatus) async {
+  Future<void> updateSwapStatus(
+      String swapId, String bookId, SwapStatus newStatus) async {
+    // Create a batch write to update both the swap and the book
+    final batch = _firestore.batch();
+
+    // 1. Update the swap offer
+    final swapRef = _swapsCollection.doc(swapId);
+    batch.update(swapRef, {'status': newStatus.toString().split('.').last});
+
+    // 2. Update the book's status based on the decision
+    final bookRef = _booksCollection.doc(bookId);
+    if (newStatus == SwapStatus.Accepted) {
+      batch.update(bookRef, {'status': 'Swapped'});
+    } else if (newStatus == SwapStatus.Rejected) {
+      // Put the book back on the market
+      batch.update(bookRef, {'status': 'Available'});
+    }
+
     try {
-      await _swapsCollection.doc(swapId).update({'status': newStatus.toString().split('.').last});
-
-      // If a swap is accepted, you might also want to update the book status to "Swapped"
-      // If rejected, you might want to set the book status back to "Available"
-      // We can add this logic later, for now, just update the offer.
-
+      await batch.commit();
     } catch (e) {
       throw Exception('Failed to update swap status: $e');
-    }
-  }
-
-  // Collection reference for cleaner code
-  CollectionReference<Map<String, dynamic>> get _booksCollection =>
-      _firestore.collection('books');
-
-  /// Uploads an image to Cloudinary and returns the secure URL.
-  Future<String> _uploadImage(XFile image) async {
-    try {
-      CloudinaryResponse response = await _cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          image.path,
-          resourceType: CloudinaryResourceType.Image,
-          folder: 'book_covers',
-        ),
-      );
-      return response.secureUrl;
-    } on CloudinaryException catch (e) {
-      throw Exception('Image upload failed: ${e.message}');
-    } catch (e) {
-      throw Exception('Image upload failed: $e');
-    }
-  }
-
-  /// Creates a new book listing.
-  Future<void> postBook(Book book, XFile imageFile) async {
-    try {
-      // 1. Upload image first
-      final imageUrl = await _uploadImage(imageFile);
-
-      // 2. Add image URL to book object
-      final bookWithImage = book.copyWith(imageUrl: imageUrl);
-
-      // 3. Save to Firestore
-      await _booksCollection.add(bookWithImage.toJson());
-    } catch (e) {
-      throw Exception('Failed to post book: $e');
-    }
-  }
-
-  /// READ: Get all available books (for Browse screen)
-  Stream<List<Book>> getAvailableBooks() {
-    return _booksCollection
-        .where('status', isEqualTo: 'Available')
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => Book.fromFirestore(doc)).toList();
-    });
-  }
-
-  /// READ: Get books by a specific owner (for My Listings screen)
-  Stream<List<Book>> getBooksByOwner(String ownerId) {
-    return _booksCollection
-        .where('ownerId', isEqualTo: ownerId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => Book.fromFirestore(doc)).toList();
-    });
-  }
-
-  /// Deletes a book listing.
-  Future<void> deleteBook(String bookId) async {
-    try {
-      await _booksCollection.doc(bookId).delete();
-      // Optional: You could also delete the image from Cloudinary here
-      // if you wanted to be perfectly clean, but it requires the API Secret.
-      // For this assignment, just deleting the Firestore doc is sufficient.
-    } catch (e) {
-      throw Exception('Failed to delete book: $e');
     }
   }
 }

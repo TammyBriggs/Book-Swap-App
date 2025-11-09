@@ -24,13 +24,17 @@ final availableBooksProvider = StreamProvider<List<Book>>((ref) {
 
 // 4. Stream of MY books (for My Listings Screen)
 final myBooksProvider = StreamProvider<List<Book>>((ref) {
-  final user = ref
-      .watch(firebaseAuthProvider)
-      .currentUser;
+  // 1. Watch the auth state provider, NOT just the current user.
+  // This forces the provider to rebuild whenever the user logs in or out.
+  final authState = ref.watch(authStateProvider);
+
+  // 2. Get the user from the async value
+  final user = authState.value;
+
   if (user == null) {
-    // Should never happen due to auth wrapper, but good for safety
     return Stream.value([]);
   }
+
   final repository = ref.watch(bookRepositoryProvider);
   return repository.getBooksByOwner(user.uid);
 });
