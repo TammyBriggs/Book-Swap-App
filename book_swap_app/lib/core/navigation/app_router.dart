@@ -11,6 +11,7 @@ import 'package:book_swap_app/features/book_listings/presentation/my_listings_sc
 import 'package:book_swap_app/features/chat/presentation/chats_overview_screen.dart';
 import 'package:book_swap_app/features/auth/presentation/settings_screen.dart';
 import 'package:book_swap_app/features/book_listings/presentation/post_book_screen.dart';
+import '../../features/chat/presentation/chat_screen.dart';
 
 // Private key for the root navigator
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -108,12 +109,25 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           // Branch 3: Chats
+          // Branch 3: Chats
           StatefulShellBranch(
             navigatorKey: _chatsNavigatorKey,
             routes: [
               GoRoute(
                 path: '/chats',
                 builder: (context, state) => const ChatsOverviewScreen(),
+                routes: [
+                  // NEW NESTED ROUTE FOR CHAT DETAILS
+                  GoRoute(
+                    path: ':chatId', // Dynamic parameter
+                    builder: (context, state) {
+                      final chatId = state.pathParameters['chatId']!;
+                      // We get the title from query params for simplicity
+                      final title = state.uri.queryParameters['title'] ?? 'Chat';
+                      return ChatScreen(chatId: chatId, chatTitle: title);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

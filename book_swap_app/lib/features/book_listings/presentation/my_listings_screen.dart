@@ -34,7 +34,7 @@ class MyListingsScreen extends ConsumerWidget {
             // --- Tab 1: My Books ---
             _MyBooksTab(),
 
-            // --- Tab 2: My Offers (Incoming) ---
+            // --- Tab 2: My Offers (Incoming & Outgoing) ---
             _MyOffersTab(),
           ],
         ),
@@ -69,7 +69,7 @@ class _MyBooksTab extends ConsumerWidget {
               book: book,
               isMyListing: true,
               onDeletePressed: () async {
-                // ... (Delete logic remains exactly the same as before)
+                // Confirm deletion
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
@@ -121,67 +121,96 @@ class _MyBooksTab extends ConsumerWidget {
 class _MyOffersTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final incomingSwapsAsync = ref.watch(incomingSwapsProvider);
+    final incomingAsync = ref.watch(incomingSwapsProvider);
+    final outgoingAsync = ref.watch(outgoingSwapsProvider);
 
-    return incomingSwapsAsync.when(
-      loading: () => const LoadingIndicator(),
-      error: (err, stack) {
-        // You will probably get an Index Error here!
-        // Click the link in your console to create the index for the 'swaps' collection.
-        print(err);
-        return Center(
-            child: Text('Error: $err\n\n(Have you created the Firestore Index?)'));
-      },
-      data: (offers) {
-        if (offers.isEmpty) {
-          return const Center(
-            child: Text(
-              'You have no incoming swap offers.',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: offers.length,
-          itemBuilder: (context, index) {
-            final offer = offers[index];
-            return SwapOfferCard(
-              offer: offer,
-              onAccept: () async {
-                try {
-                  await ref.read(bookRepositoryProvider).updateSwapStatus(
-                    offer.id!,
-                    offer.bookId,
-                    SwapStatus.Accepted,
+    return Column(
+      children: [
+        // --- SECTION 1: RECEIVED OFFERS ---
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8.0),
+          color: Colors.black12,
+          child: const Text('Received Offers',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        Expanded(
+          child: incomingAsync.when(
+            loading: () => const LoadingIndicator(),
+            error: (err, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                      'Error: $err\n\n(Have you created the Firestore Index for the "swaps" collection?)'),
+                )),
+            data: (offers) {
+              if (offers.isEmpty) {
+                return const Center(
+                    child: Text('No received offers.',
+                        style: TextStyle(color: Colors.grey)));
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: offers.length,
+                itemBuilder: (context, index) {
+                  final offer = offers[index];
+                  return SwapOfferCard(
+                    offer: offer,
+                    isOutgoing: false, // THESE ARE INCOMING
+                    onAccept: () => ref
+                        .read(bookRepositoryProvider)
+                        .updateSwapStatus(
+                        offer.id!, offer.bookId, SwapStatus.Accepted),
+                    onReject: () => ref
+                        .read(bookRepositoryProvider)
+                        .updateSwapStatus(
+                        offer.id!, offer.bookId, SwapStatus.Rejected),
                   );
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed: $e')),
-                    );
-                  }
-                }
-              },
-              onReject: () async {
-                try {
-                  await ref.read(bookRepositoryProvider).updateSwapStatus(
-                    offer.id!,
-                    offer.bookId,
-                    SwapStatus.Rejected,
+                },
+              );
+            },
+          ),
+        ),
+
+        // --- SECTION 2: SENT REQUESTS ---
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8.0),
+          color: Colors.black12,
+          child: const Text('Sent Requests',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        Expanded(
+          child: outgoingAsync.when(
+            loading: () => const LoadingIndicator(),
+            error: (err, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                      'Error: $err\n\n(Have you created the Firestore Index for the "swaps" collection?)'),
+                )),
+            data: (offers) {
+              if (offers.isEmpty) {
+                return const Center(
+                    child: Text('No sent requests.',
+                        style: TextStyle(color: Colors.grey)));
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: offers.length,
+                itemBuilder: (context, index) {
+                  final offer = offers[index];
+                  return SwapOfferCard(
+                    offer: offer,
+                    isOutgoing: true, // THESE ARE OUTGOING
+                    // No onAccept/onReject needed
                   );
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed: $e')),
-                    );
-                  }
-                }
-              },
-            );
-          },
-        );
-      },
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

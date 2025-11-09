@@ -5,14 +5,16 @@ import 'package:book_swap_app/features/book_listings/domain/swap_offer.dart';
 
 class SwapOfferCard extends StatelessWidget {
   final SwapOffer offer;
-  final VoidCallback onAccept;
-  final VoidCallback onReject;
+  final VoidCallback? onAccept;
+  final VoidCallback? onReject;
+  final bool isOutgoing;
 
   const SwapOfferCard({
     super.key,
     required this.offer,
-    required this.onAccept,
-    required this.onReject,
+    this.onAccept,
+    this.onReject,
+    this.isOutgoing = false,
   });
 
   @override
@@ -27,7 +29,9 @@ class SwapOfferCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Offer for: ${offer.bookTitle}',
+              isOutgoing
+                  ? 'You requested: ${offer.bookTitle}'
+                  : 'Offer for: ${offer.bookTitle}',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -36,7 +40,9 @@ class SwapOfferCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'From: ${offer.requesterEmail}',
+              isOutgoing
+                  ? 'Owner: ${offer.bookOwnerEmail}'
+                  : 'From: ${offer.requesterEmail}',
               style: const TextStyle(color: Colors.grey, fontSize: 14),
             ),
             const SizedBox(height: 4),
@@ -45,7 +51,9 @@ class SwapOfferCard extends StatelessWidget {
               style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const SizedBox(height: 12),
-            if (offer.status == SwapStatus.Pending)
+
+            // Show Accept/Reject only if it's INCOMING and PENDING
+            if (!isOutgoing && offer.status == SwapStatus.Pending)
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -66,6 +74,7 @@ class SwapOfferCard extends StatelessWidget {
                 ],
               )
             else
+            // Otherwise, just show the status
               Text(
                 'Status: ${offer.statusString}',
                 style: TextStyle(
@@ -73,7 +82,9 @@ class SwapOfferCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: offer.status == SwapStatus.Accepted
                       ? Colors.green
-                      : Colors.red,
+                      : offer.status == SwapStatus.Rejected
+                      ? Colors.red
+                      : Colors.orange, // Pending
                 ),
               ),
           ],
