@@ -10,9 +10,15 @@ import 'package:book_swap_app/features/book_listings/presentation/browse_listing
 import 'package:book_swap_app/features/book_listings/presentation/my_listings_screen.dart';
 import 'package:book_swap_app/features/chat/presentation/chats_overview_screen.dart';
 import 'package:book_swap_app/features/auth/presentation/settings_screen.dart';
+import 'package:book_swap_app/features/book_listings/presentation/post_book_screen.dart';
 
 // Private key for the root navigator
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
+// Private keys for each branch navigator (good practice)
+final _browseNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'browse');
+final _myListingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'myListings');
+final _chatsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'chats');
+final _settingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'settings');
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -22,47 +28,39 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     redirect: (context, state) {
       final userAsyncValue = authState;
-
-      // This is the user's current location
       final currentLocation = state.uri.toString();
 
-      // If auth state is still loading, don't do anything yet
       if (userAsyncValue.isLoading) return null;
 
-      // If user is NOT logged in (or has an error)
       if (userAsyncValue.hasError || !userAsyncValue.hasValue || userAsyncValue.value == null) {
-        // If they are NOT already on a login/signup page, send them to login
         if (currentLocation != '/login' && currentLocation != '/signup') {
           return '/login';
         }
-        return null; // They are already where they need to be
+        return null;
       }
 
-      // --- If we get here, the user IS logged in ---
       final user = userAsyncValue.value!;
-
-      // Check if email is verified
       if (!user.emailVerified) {
-        // If not verified, and NOT already on the verify screen, send them there
         if (currentLocation != '/verify-email') {
           return '/verify-email';
         }
         return null;
       }
 
-      // --- If we get here, the user is logged in AND verified ---
-      // If they are currently on any auth screen, send them to the home page
       if (currentLocation == '/login' ||
           currentLocation == '/signup' ||
           currentLocation == '/verify-email') {
         return '/browse';
       }
 
-      // Otherwise, let them go where they want
+      // Handle root '/' path and redirect to initial location
+      if (currentLocation == '/') {
+        return '/browse';
+      }
+
       return null;
     },
     routes: [
-      // --- Auth Routes ---
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
@@ -76,23 +74,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const VerifyEmailScreen(),
       ),
 
-      // --- Main App Shell (Bottom Navigation) ---
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);
         },
         branches: [
-          // Branch 1: Browse Listings
+          // Branch 1: Browse
           StatefulShellBranch(
+            navigatorKey: _browseNavigatorKey,
             routes: [
               GoRoute(
                 path: '/browse',
                 builder: (context, state) => const BrowseListingsScreen(),
+                routes: [
+                  // NESTED ROUTE HERE:
+                  // This means the path is effectively '/browse/post-book'
+                  GoRoute(
+                    path: 'post-book', // Note: NO leading slash for sub-routes
+                    builder: (context, state) => const PostBookScreen(),
+                  ),
+                ],
               ),
             ],
           ),
           // Branch 2: My Listings
           StatefulShellBranch(
+            navigatorKey: _myListingsNavigatorKey,
             routes: [
               GoRoute(
                 path: '/my-listings',
@@ -102,6 +109,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           // Branch 3: Chats
           StatefulShellBranch(
+            navigatorKey: _chatsNavigatorKey,
             routes: [
               GoRoute(
                 path: '/chats',
@@ -111,6 +119,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           // Branch 4: Settings
           StatefulShellBranch(
+            navigatorKey: _settingsNavigatorKey,
             routes: [
               GoRoute(
                 path: '/settings',
