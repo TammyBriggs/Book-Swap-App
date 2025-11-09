@@ -1,21 +1,102 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:book_swap_app/core/constants/colors.dart';
+import 'package:book_swap_app/core/widgets/loading_indicator.dart';
+import 'package:book_swap_app/features/book_listings/application/book_providers.dart';
+import 'package:book_swap_app/features/book_listings/presentation/widgets/book_card.dart';
+import 'package:book_swap_app/features/auth/application/auth_providers.dart';
 
-class BrowseListingsScreen extends StatelessWidget {
+class BrowseListingsScreen extends ConsumerWidget {
   const BrowseListingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final booksAsync = ref.watch(availableBooksProvider);
+    final currentUser = ref.watch(firebaseAuthProvider).currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Browse Listings'),
         backgroundColor: kBackgroundColor,
         elevation: 0,
       ),
-      body: const Center(child: Text('Browse Listings Screen')),
+      body: booksAsync.when(
+        loading: () => const LoadingIndicator(),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+        data: (books) {
+          if (books.isEmpty) {
+            return const Center(
+              child: Text(
+                'No books available yet.\nBe the first to post!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: books.length,
+            itemBuilder: (context, index) {
+              final book = books[index];
+              // Don't show 'Swap' button if it's my own book
+              final isMyBook = book.ownerId == currentUser?.uid;
+
+              return BookCard(
+                book: book,
+                onSwapPressed: isMyBook
+                    ? null // Disable button for own books
+                    : () async {
+                  // Show confirmation dialog before swapping
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Confirm Swap'),
+                      content:
+                      Text('Request to swap for "${book.title}"?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Request',
+                              style: TextStyle(color: kSecondaryColor)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  // If confirmed, execute the swap
+                  if (confirm == true) {
+                    try {
+                      await ref.read(bookRepositoryProvider).requestSwap(
+                        book,
+                        currentUser!, // We know user is not null here due to AuthWrapper
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Swap request sent!')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Failed: ${e.toString()}')),
+                        );
+                      }
+                    }
+                  }
+                },
+              );
+            },
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
-        // Updated path to match nested route structure
         onPressed: () => context.go('/browse/post-book'),
         backgroundColor: kSecondaryColor,
         foregroundColor: kPrimaryColor,
