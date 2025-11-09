@@ -11,13 +11,13 @@ import 'package:book_swap_app/features/book_listings/presentation/my_listings_sc
 import 'package:book_swap_app/features/chat/presentation/chats_overview_screen.dart';
 import 'package:book_swap_app/features/auth/presentation/settings_screen.dart';
 import 'package:book_swap_app/features/book_listings/presentation/post_book_screen.dart';
-import '../../features/chat/presentation/chat_screen.dart';
+import 'package:book_swap_app/features/book_listings/domain/book.dart';
+import 'package:book_swap_app/features/chat/presentation/chat_screen.dart';
 
-// Private key for the root navigator
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-// Private keys for each branch navigator (good practice)
 final _browseNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'browse');
-final _myListingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'myListings');
+final _myListingsNavigatorKey =
+GlobalKey<NavigatorState>(debugLabel: 'myListings');
 final _chatsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'chats');
 final _settingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'settings');
 
@@ -33,7 +33,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (userAsyncValue.isLoading) return null;
 
-      if (userAsyncValue.hasError || !userAsyncValue.hasValue || userAsyncValue.value == null) {
+      if (userAsyncValue.hasError ||
+          !userAsyncValue.hasValue ||
+          userAsyncValue.value == null) {
         if (currentLocation != '/login' && currentLocation != '/signup') {
           return '/login';
         }
@@ -54,7 +56,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/browse';
       }
 
-      // Handle root '/' path and redirect to initial location
       if (currentLocation == '/') {
         return '/browse';
       }
@@ -74,31 +75,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/verify-email',
         builder: (context, state) => const VerifyEmailScreen(),
       ),
+      // MOVED TO TOP LEVEL
+      GoRoute(
+        path: '/post-book',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final bookToEdit = state.extra as Book?;
+          return PostBookScreen(bookToEdit: bookToEdit);
+        },
+      ),
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);
         },
         branches: [
-          // Branch 1: Browse
           StatefulShellBranch(
             navigatorKey: _browseNavigatorKey,
             routes: [
               GoRoute(
                 path: '/browse',
                 builder: (context, state) => const BrowseListingsScreen(),
-                routes: [
-                  // NESTED ROUTE HERE:
-                  // This means the path is effectively '/browse/post-book'
-                  GoRoute(
-                    path: 'post-book', // Note: NO leading slash for sub-routes
-                    builder: (context, state) => const PostBookScreen(),
-                  ),
-                ],
               ),
             ],
           ),
-          // Branch 2: My Listings
           StatefulShellBranch(
             navigatorKey: _myListingsNavigatorKey,
             routes: [
@@ -108,8 +108,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Branch 3: Chats
-          // Branch 3: Chats
           StatefulShellBranch(
             navigatorKey: _chatsNavigatorKey,
             routes: [
@@ -117,13 +115,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/chats',
                 builder: (context, state) => const ChatsOverviewScreen(),
                 routes: [
-                  // NEW NESTED ROUTE FOR CHAT DETAILS
                   GoRoute(
-                    path: ':chatId', // Dynamic parameter
+                    path: ':chatId',
                     builder: (context, state) {
                       final chatId = state.pathParameters['chatId']!;
-                      // We get the title from query params for simplicity
-                      final title = state.uri.queryParameters['title'] ?? 'Chat';
+                      final title =
+                          state.uri.queryParameters['title'] ?? 'Chat';
                       return ChatScreen(chatId: chatId, chatTitle: title);
                     },
                   ),
@@ -131,7 +128,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Branch 4: Settings
           StatefulShellBranch(
             navigatorKey: _settingsNavigatorKey,
             routes: [

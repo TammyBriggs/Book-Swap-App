@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:book_swap_app/core/constants/colors.dart';
 import 'package:book_swap_app/core/widgets/loading_indicator.dart';
 import 'package:book_swap_app/features/book_listings/application/book_providers.dart';
@@ -31,10 +32,7 @@ class MyListingsScreen extends ConsumerWidget {
         ),
         body: TabBarView(
           children: [
-            // --- Tab 1: My Books ---
             _MyBooksTab(),
-
-            // --- Tab 2: My Offers (Incoming & Outgoing) ---
             _MyOffersTab(),
           ],
         ),
@@ -68,8 +66,10 @@ class _MyBooksTab extends ConsumerWidget {
             return BookCard(
               book: book,
               isMyListing: true,
+              onEditPressed: () {
+                context.push('/post-book', extra: book);
+              },
               onDeletePressed: () async {
-                // Confirm deletion
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
@@ -92,9 +92,7 @@ class _MyBooksTab extends ConsumerWidget {
 
                 if (confirm == true && book.id != null) {
                   try {
-                    await ref
-                        .read(bookRepositoryProvider)
-                        .deleteBook(book.id!);
+                    await ref.read(bookRepositoryProvider).deleteBook(book.id!);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -126,7 +124,6 @@ class _MyOffersTab extends ConsumerWidget {
 
     return Column(
       children: [
-        // --- SECTION 1: RECEIVED OFFERS ---
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(8.0),
@@ -156,7 +153,7 @@ class _MyOffersTab extends ConsumerWidget {
                   final offer = offers[index];
                   return SwapOfferCard(
                     offer: offer,
-                    isOutgoing: false, // THESE ARE INCOMING
+                    isOutgoing: false,
                     onAccept: () => ref
                         .read(bookRepositoryProvider)
                         .updateSwapStatus(
@@ -171,8 +168,6 @@ class _MyOffersTab extends ConsumerWidget {
             },
           ),
         ),
-
-        // --- SECTION 2: SENT REQUESTS ---
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(8.0),
@@ -202,8 +197,7 @@ class _MyOffersTab extends ConsumerWidget {
                   final offer = offers[index];
                   return SwapOfferCard(
                     offer: offer,
-                    isOutgoing: true, // THESE ARE OUTGOING
-                    // No onAccept/onReject needed
+                    isOutgoing: true,
                   );
                 },
               );

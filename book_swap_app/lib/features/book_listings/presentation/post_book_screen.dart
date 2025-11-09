@@ -9,7 +9,9 @@ import 'package:book_swap_app/features/book_listings/domain/book.dart';
 import 'package:book_swap_app/features/book_listings/application/book_providers.dart';
 
 class PostBookScreen extends ConsumerStatefulWidget {
-  const PostBookScreen({super.key});
+  final Book? bookToEdit;
+
+  const PostBookScreen({super.key, this.bookToEdit});
 
   @override
   ConsumerState<PostBookScreen> createState() => _PostBookScreenState();
@@ -17,13 +19,25 @@ class PostBookScreen extends ConsumerStatefulWidget {
 
 class _PostBookScreenState extends ConsumerState<PostBookScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _authorController = TextEditingController();
-  BookCondition _selectedCondition = BookCondition.Used;
+  late TextEditingController _titleController;
+  late TextEditingController _authorController;
+  late BookCondition _selectedCondition;
   XFile? _selectedImage;
   bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
+
+  bool get _isEditing => widget.bookToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController =
+        TextEditingController(text: widget.bookToEdit?.title ?? '');
+    _authorController =
+        TextEditingController(text: widget.bookToEdit?.author ?? '');
+    _selectedCondition = widget.bookToEdit?.condition ?? BookCondition.Used;
+  }
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -34,7 +48,7 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedImage == null) {
+      if (!_isEditing && _selectedImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select an image')),
         );
@@ -45,25 +59,39 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
 
       try {
         final user = ref.read(firebaseAuthProvider).currentUser!;
+        final repository = ref.read(bookRepositoryProvider);
 
-        // Create the book object (without image URL yet)
-        final newBook = Book(
-          title: _titleController.text.trim(),
-          author: _authorController.text.trim(),
-          condition: _selectedCondition,
-          imageUrl: '', // Repository will fill this in
-          ownerId: user.uid,
-          ownerEmail: user.email!,
-        );
-
-        // Call repository to upload image and save book
-        await ref.read(bookRepositoryProvider).postBook(newBook, _selectedImage!);
+        if (_isEditing) {
+          final updatedBook = widget.bookToEdit!.copyWith(
+            title: _titleController.text.trim(),
+            author: _authorController.text.trim(),
+            condition: _selectedCondition,
+          );
+          await repository.updateBook(updatedBook, _selectedImage);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Book updated successfully!')),
+            );
+          }
+        } else {
+          final newBook = Book(
+            title: _titleController.text.trim(),
+            author: _authorController.text.trim(),
+            condition: _selectedCondition,
+            imageUrl: '',
+            ownerId: user.uid,
+            ownerEmail: user.email!,
+          );
+          await repository.postBook(newBook, _selectedImage!);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Book posted successfully!')),
+            );
+          }
+        }
 
         if (mounted) {
-          context.pop(); // Go back to previous screen after success
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Book posted successfully!')),
-          );
+          context.pop();
         }
       } catch (e) {
         if (mounted) {
@@ -90,7 +118,7 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Post a Book'),
+        title: Text(_isEditing ? 'Edit Book' : 'Post a Book'),
         backgroundColor: kBackgroundColor,
       ),
       body: SingleChildScrollView(
@@ -100,7 +128,6 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- Image Picker ---
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -113,13 +140,21 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
                       image: FileImage(File(_selectedImage!.path)),
                       fit: BoxFit.cover,
                     )
+                        : (_isEditing && widget.bookToEdit!.imageUrl.isNotEmpty)
+                        ? DecorationImage(
+                      image:
+                      NetworkImage(widget.bookToEdit!.imageUrl),
+                      fit: BoxFit.cover,
+                    )
                         : null,
                   ),
-                  child: _selectedImage == null
+                  child: (_selectedImage == null &&
+                      (!_isEditing || widget.bookToEdit!.imageUrl.isEmpty))
                       ? const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.camera_alt, size: 50, color: Colors.white54),
+                      Icon(Icons.camera_alt,
+                          size: 50, color: Colors.white54),
                       SizedBox(height: 8),
                       Text('Tap to add cover photo',
                           style: TextStyle(color: Colors.white54)),
@@ -129,8 +164,6 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // --- Title Field ---
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -142,8 +175,6 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
                 validator: (val) => val!.isEmpty ? 'Enter a title' : null,
               ),
               const SizedBox(height: 16),
-
-              // --- Author Field ---
               TextFormField(
                 controller: _authorController,
                 decoration: const InputDecoration(
@@ -155,8 +186,6 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
                 validator: (val) => val!.isEmpty ? 'Enter an author' : null,
               ),
               const SizedBox(height: 24),
-
-              // --- Condition Dropdown ---
               const Text('Condition', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
               Container(
@@ -189,8 +218,6 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-
-              // --- Submit Button ---
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
@@ -202,7 +229,7 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
                   textStyle: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                child: const Text('Post Book'),
+                child: Text(_isEditing ? 'Update Book' : 'Post Book'),
               ),
             ],
           ),

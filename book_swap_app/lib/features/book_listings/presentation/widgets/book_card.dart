@@ -8,6 +8,7 @@ class BookCard extends StatelessWidget {
   final bool isMyListing;
   final VoidCallback? onSwapPressed;
   final VoidCallback? onDeletePressed;
+  final VoidCallback? onEditPressed;
 
   const BookCard({
     super.key,
@@ -15,6 +16,7 @@ class BookCard extends StatelessWidget {
     this.isMyListing = false,
     this.onSwapPressed,
     this.onDeletePressed,
+    this.onEditPressed,
   });
 
   @override
@@ -28,7 +30,6 @@ class BookCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Book Cover Image ---
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
@@ -45,8 +46,6 @@ class BookCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-
-            // --- Book Details ---
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,8 +66,6 @@ class BookCard extends StatelessWidget {
                     style: const TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
-
-                  // Condition Badge
                   Container(
                     padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -86,8 +83,6 @@ class BookCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Posted Time
                   Row(
                     children: [
                       const Icon(Icons.access_time,
@@ -103,22 +98,27 @@ class BookCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // --- Action Button (Swap or Delete) ---
             if (isMyListing)
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.redAccent),
-                onPressed: onDeletePressed,
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                    onPressed: onEditPressed,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: onDeletePressed,
+                  ),
+                ],
               )
             else if (book.status == BookStatus.Available)
-            // We will implement the actual swap logic later
               ElevatedButton(
                 onPressed: onSwapPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kSecondaryColor,
                   foregroundColor: kPrimaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  minimumSize: const Size(0, 36), // Compact button
+                  minimumSize: const Size(0, 36),
                 ),
                 child: const Text('Swap'),
               ),

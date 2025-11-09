@@ -39,15 +39,13 @@ class BrowseListingsScreen extends ConsumerWidget {
             itemCount: books.length,
             itemBuilder: (context, index) {
               final book = books[index];
-              // Don't show 'Swap' button if it's my own book
               final isMyBook = book.ownerId == currentUser?.uid;
 
               return BookCard(
                 book: book,
                 onSwapPressed: isMyBook
-                    ? null // Disable button for own books
+                    ? null
                     : () async {
-                  // Show confirmation dialog before swapping
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
@@ -68,12 +66,11 @@ class BrowseListingsScreen extends ConsumerWidget {
                     ),
                   );
 
-                  // If confirmed, execute the swap
                   if (confirm == true) {
                     try {
                       await ref.read(bookRepositoryProvider).requestSwap(
                         book,
-                        currentUser!, // We know user is not null here due to AuthWrapper
+                        currentUser!,
                       );
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -97,7 +94,7 @@ class BrowseListingsScreen extends ConsumerWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/browse/post-book'),
+        onPressed: () => context.push('/post-book'),
         backgroundColor: kSecondaryColor,
         foregroundColor: kPrimaryColor,
         icon: const Icon(Icons.add),

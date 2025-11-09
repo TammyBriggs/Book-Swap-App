@@ -72,6 +72,25 @@ class BookRepository {
     });
   }
 
+  /// Updates an existing book listing.
+  Future<void> updateBook(Book book, XFile? newImageFile) async {
+    if (book.id == null) throw Exception('Cannot update book without an ID');
+
+    try {
+      String imageUrl = book.imageUrl;
+      if (newImageFile != null) {
+        // If a new image was selected, upload it
+        imageUrl = await _uploadImage(newImageFile);
+      }
+
+      final updatedBook = book.copyWith(imageUrl: imageUrl);
+      // We use set with merge to be safe, or just update
+      await _booksCollection.doc(book.id).update(updatedBook.toJson());
+    } catch (e) {
+      throw Exception('Failed to update book: $e');
+    }
+  }
+
   Future<void> deleteBook(String bookId) async {
     try {
       await _booksCollection.doc(bookId).delete();

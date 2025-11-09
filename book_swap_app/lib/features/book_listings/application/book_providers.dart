@@ -40,19 +40,25 @@ final myBooksProvider = StreamProvider<List<Book>>((ref) {
 });
 
 // 5. Stream of outgoing swap offers (Offers I made)
-    final outgoingSwapsProvider = StreamProvider<List<SwapOffer>>((ref) {
-final user = ref.watch(firebaseAuthProvider).currentUser;
-if (user == null) return Stream.value([]);
+final outgoingSwapsProvider = StreamProvider<List<SwapOffer>>((ref) {
+  // FIX: Watch authStateProvider, not just currentUser
+  final authState = ref.watch(authStateProvider);
+  final user = authState.value;
 
-final repository = ref.watch(bookRepositoryProvider);
-return repository.getOutgoingSwaps(user.uid);
+  if (user == null) return Stream.value([]);
+
+  final repository = ref.watch(bookRepositoryProvider);
+  return repository.getOutgoingSwaps(user.uid);
 });
 
 // 6. Stream of incoming swap offers (Offers I received)
 final incomingSwapsProvider = StreamProvider<List<SwapOffer>>((ref) {
-final user = ref.watch(firebaseAuthProvider).currentUser;
-if (user == null) return Stream.value([]);
+  // FIX: Watch authStateProvider here too!
+  final authState = ref.watch(authStateProvider);
+  final user = authState.value;
 
-final repository = ref.watch(bookRepositoryProvider);
-return repository.getIncomingSwaps(user.uid);
+  if (user == null) return Stream.value([]);
+
+  final repository = ref.watch(bookRepositoryProvider);
+  return repository.getIncomingSwaps(user.uid);
 });
