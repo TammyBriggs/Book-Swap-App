@@ -31,7 +31,6 @@ class MyApp extends ConsumerWidget {
         colorScheme: const ColorScheme.dark(
           primary: kSecondaryColor,
           secondary: kSecondaryColor,
-          background: kBackgroundColor,
           surface: kPrimaryColor,
         ),
         fontFamily: 'Poppins',

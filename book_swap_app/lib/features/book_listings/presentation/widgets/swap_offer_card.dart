@@ -53,7 +53,7 @@ class SwapOfferCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Show Accept/Reject only if it's INCOMING and PENDING
-            if (!isOutgoing && offer.status == SwapStatus.Pending)
+            if (!isOutgoing && offer.status == SwapStatus.pending)
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -80,9 +80,9 @@ class SwapOfferCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: offer.status == SwapStatus.Accepted
+                  color: offer.status == SwapStatus.accepted
                       ? Colors.green
-                      : offer.status == SwapStatus.Rejected
+                      : offer.status == SwapStatus.rejected
                       ? Colors.red
                       : Colors.orange, // Pending
                 ),

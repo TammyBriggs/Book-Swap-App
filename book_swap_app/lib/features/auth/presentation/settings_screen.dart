@@ -41,7 +41,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onChanged: (val) {
               setState(() => _notificationsOn = val);
             },
-            activeColor: kSecondaryColor,
+            activeThumbColor: kSecondaryColor,
           ),
           SwitchListTile(
             title: const Text('Email Updates'),
@@ -49,7 +49,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onChanged: (val) {
               setState(() => _emailUpdatesOn = val);
             },
-            activeColor: kSecondaryColor,
+            activeThumbColor: kSecondaryColor,
           ),
           const Divider(),
 

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum SwapStatus { Pending, Accepted, Rejected }
+enum SwapStatus { pending, accepted, rejected }
 
 class SwapOffer {
   final String? id;
@@ -23,7 +23,7 @@ class SwapOffer {
     required this.bookOwnerEmail,
     required this.requesterId,
     required this.requesterEmail,
-    this.status = SwapStatus.Pending,
+    this.status = SwapStatus.pending,
     Timestamp? createdAt,
   }) : createdAt = createdAt ?? Timestamp.now();
 
@@ -40,8 +40,8 @@ class SwapOffer {
       requesterId: data['requesterId'] ?? '',
       requesterEmail: data['requesterEmail'] ?? '',
       status: SwapStatus.values.firstWhere(
-            (e) => e.toString() == 'SwapStatus.${data['status']}',
-        orElse: () => SwapStatus.Pending,
+            (e) => e.toString().split('.').last.toLowerCase() == data['status']?.toString().toLowerCase(),
+        orElse: () => SwapStatus.pending,
       ),
       createdAt: data['createdAt'] ?? Timestamp.now(),
     );

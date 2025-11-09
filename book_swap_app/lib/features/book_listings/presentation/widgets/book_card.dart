@@ -70,7 +70,7 @@ class BookCard extends StatelessWidget {
                     padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: kSecondaryColor.withOpacity(0.2),
+                      color: kSecondaryColor.withAlpha((255 * 0.2).round()),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -111,7 +111,7 @@ class BookCard extends StatelessWidget {
                   ),
                 ],
               )
-            else if (book.status == BookStatus.Available)
+            else if (book.status == BookStatus.available)
               ElevatedButton(
                 onPressed: onSwapPressed,
                 style: ElevatedButton.styleFrom(

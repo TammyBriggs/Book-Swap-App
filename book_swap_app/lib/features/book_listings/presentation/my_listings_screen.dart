@@ -157,11 +157,11 @@ class _MyOffersTab extends ConsumerWidget {
                     onAccept: () => ref
                         .read(bookRepositoryProvider)
                         .updateSwapStatus(
-                        offer.id!, offer.bookId, SwapStatus.Accepted),
+                        offer.id!, offer.bookId, SwapStatus.accepted),
                     onReject: () => ref
                         .read(bookRepositoryProvider)
                         .updateSwapStatus(
-                        offer.id!, offer.bookId, SwapStatus.Rejected),
+                        offer.id!, offer.bookId, SwapStatus.rejected),
                   );
                 },
               );

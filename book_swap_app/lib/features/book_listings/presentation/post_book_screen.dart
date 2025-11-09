@@ -36,7 +36,7 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
         TextEditingController(text: widget.bookToEdit?.title ?? '');
     _authorController =
         TextEditingController(text: widget.bookToEdit?.author ?? '');
-    _selectedCondition = widget.bookToEdit?.condition ?? BookCondition.Used;
+    _selectedCondition = widget.bookToEdit?.condition ?? BookCondition.used;
   }
 
   Future<void> _pickImage() async {
@@ -201,10 +201,20 @@ class _PostBookScreenState extends ConsumerState<PostBookScreen> {
                     dropdownColor: kPrimaryColor,
                     isExpanded: true,
                     items: BookCondition.values.map((BookCondition condition) {
+                      String displayText;
+                      if (condition == BookCondition.brandNew) {
+                        displayText = 'New';
+                      } else if (condition == BookCondition.likeNew) {
+                        displayText = 'Like New';
+                      } else {
+                        displayText = condition.toString().split('.').last[0].toUpperCase() +
+                            condition.toString().split('.').last.substring(1);
+                      }
+
                       return DropdownMenuItem<BookCondition>(
                         value: condition,
                         child: Text(
-                          condition.toString().split('.').last,
+                          displayText,
                           style: const TextStyle(color: Colors.white),
                         ),
                       );

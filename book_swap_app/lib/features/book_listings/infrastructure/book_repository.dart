@@ -54,7 +54,7 @@ class BookRepository {
 
   Stream<List<Book>> getAvailableBooks() {
     return _booksCollection
-        .where('status', isEqualTo: 'Available')
+        .where('status', isEqualTo: 'available')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -116,7 +116,7 @@ class BookRepository {
 
     // 1. Update book status
     final bookRef = _booksCollection.doc(book.id);
-    batch.update(bookRef, {'status': 'Pending'});
+    batch.update(bookRef, {'status': 'pending'});
 
     // 2. Create swap offer
     final swapRef = _swapsCollection.doc();
@@ -165,10 +165,10 @@ class BookRepository {
     batch.update(swapRef, {'status': newStatus.toString().split('.').last});
 
     final bookRef = _booksCollection.doc(bookId);
-    if (newStatus == SwapStatus.Accepted) {
-      batch.update(bookRef, {'status': 'Swapped'});
-    } else if (newStatus == SwapStatus.Rejected) {
-      batch.update(bookRef, {'status': 'Available'});
+    if (newStatus == SwapStatus.accepted) {
+      batch.update(bookRef, {'status': 'swapped'});
+    } else if (newStatus == SwapStatus.rejected) {
+      batch.update(bookRef, {'status': 'available'});
     }
 
     try {

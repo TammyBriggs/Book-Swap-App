@@ -1,22 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Enum for book condition (from rubric)
-enum BookCondition { New, LikeNew, Good, Used }
+enum BookCondition { brandNew, likeNew, good, used }
 
-// Enum for book status
-enum BookStatus { Available, Pending, Swapped }
+enum BookStatus { available, pending, swapped }
 
 class Book {
-  final String? id; // Document ID
+  final String? id;
   final String title;
   final String author;
   final BookCondition condition;
   final String imageUrl;
   final String ownerId;
-  final String ownerEmail; // Useful for display
+  final String ownerEmail;
   final BookStatus status;
   final Timestamp createdAt;
-  // This field will be added when a swap is requested
   final String? swapForBookId;
 
   Book({
@@ -27,16 +24,27 @@ class Book {
     required this.imageUrl,
     required this.ownerId,
     required this.ownerEmail,
-    this.status = BookStatus.Available,
+    this.status = BookStatus.available,
     Timestamp? createdAt,
     this.swapForBookId,
   }) : createdAt = createdAt ?? Timestamp.now();
 
-  // Helper to convert enum to string for Firestore
-  String get conditionString => condition.toString().split('.').last;
-  String get statusString => status.toString().split('.').last;
+  String get conditionString {
+    if (condition == BookCondition.brandNew) {
+      return 'New';
+    }
+    if (condition == BookCondition.likeNew) {
+      return 'Like New';
+    }
+    String text = condition.toString().split('.').last;
+    return text[0].toUpperCase() + text.substring(1);
+  }
 
-  // Factory to create a Book from a Firestore Document
+  String get statusString {
+    String text = status.toString().split('.').last;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
   factory Book.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Book(
@@ -44,37 +52,39 @@ class Book {
       title: data['title'] ?? '',
       author: data['author'] ?? '',
       condition: BookCondition.values.firstWhere(
-            (e) => e.toString() == 'BookCondition.${data['condition']}',
-        orElse: () => BookCondition.Used,
+            (e) =>
+        e.toString().split('.').last.toLowerCase() ==
+            data['condition']?.toString().toLowerCase(),
+        orElse: () => BookCondition.used,
       ),
       imageUrl: data['imageUrl'] ?? '',
       ownerId: data['ownerId'] ?? '',
       ownerEmail: data['ownerEmail'] ?? '',
       status: BookStatus.values.firstWhere(
-            (e) => e.toString() == 'BookStatus.${data['status']}',
-        orElse: () => BookStatus.Available,
+            (e) =>
+        e.toString().split('.').last.toLowerCase() ==
+            data['status']?.toString().toLowerCase(),
+        orElse: () => BookStatus.available,
       ),
       createdAt: data['createdAt'] ?? Timestamp.now(),
       swapForBookId: data['swapForBookId'],
     );
   }
 
-  // Method to convert Book object to JSON for Firestore
   Map<String, dynamic> toJson() {
     return {
       'title': title,
       'author': author,
-      'condition': conditionString,
+      'condition': condition.toString().split('.').last,
       'imageUrl': imageUrl,
       'ownerId': ownerId,
       'ownerEmail': ownerEmail,
-      'status': statusString,
+      'status': status.toString().split('.').last,
       'createdAt': createdAt,
       'swapForBookId': swapForBookId,
     };
   }
 
-  // CopyWith method for easy updates
   Book copyWith({
     String? id,
     String? title,
