@@ -35,13 +35,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           const Divider(),
 
-          // --- Notification Toggles (Rubric Item) ---
           SwitchListTile(
             title: const Text('Notification reminders'),
             value: _notificationsOn,
             onChanged: (val) {
               setState(() => _notificationsOn = val);
-              // In a real app, you'd save this to a provider
             },
             activeColor: kSecondaryColor,
           ),
