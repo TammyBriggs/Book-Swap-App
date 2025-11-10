@@ -1,107 +1,93 @@
 # BookSwap App 📚
 
-A mobile marketplace for students to list textbooks and initiate swap offers.
-Built with Flutter, Firebase (Auth, Firestore), and Cloudinary.
+A mobile marketplace for students to list textbooks and initiate swap offers.  
+Built with **Flutter**, **Firebase (Auth, Firestore)**, and **Cloudinary**.
 
-##  Features
-Authentication
+---
 
-Secure Email/Password sign-up, login, and logout
+## Features
 
-Enforced email verification
+### Authentication
+- Secure Email/Password sign-up, login, and logout
+- Enforced email verification
 
-Book Listings (CRUD)
+### Book Listings (CRUD)
+- **Create:** Post new books with details and a cover image (uploaded to Cloudinary)
+- **Read:** Browse all available books in a real-time feed
+- **Update:** Edit your own existing listings
+- **Delete:** Remove your listings from the marketplace
 
-Create: Post new books with details and a cover image (uploaded to Cloudinary)
+### Swap System
+- Real-time swap requests
+- Accept/Reject offers with instant status updates
+- Books are automatically marked as “Pending” or “Swapped”
 
-Read: Browse all available books in a real-time feed
+### Real-time Chat
+- Automatic chat creation upon swap request
+- Live messaging between swappers
 
-Update: Edit your own existing listings
+### State Management
+- Built using **Riverpod** for a reactive and testable architecture
 
-Delete: Remove your listings from the marketplace
-
-Swap System
-
-Real-time swap requests
-
-Accept/Reject offers with instant status updates
-
-Books are automatically marked as “Pending” or “Swapped”
-
-Real-time Chat
-
-Automatic chat creation upon swap request
-
-Live messaging between swappers
-
-State Management
-
-Built using Riverpod for a reactive and testable architecture
+---
 
 ## Tech Stack
+- **Frontend:** Flutter (Dart)
+- **Backend:** Firebase (Authentication, Cloud Firestore)
+- **Storage:** Cloudinary (for image hosting)
+- **State Management:** Flutter Riverpod
+- **Navigation:** go_router
 
-Frontend: Flutter (Dart)
-
-Backend: Firebase (Authentication, Cloud Firestore)
-
-Storage: Cloudinary (for image hosting)
-
-State Management: Flutter Riverpod
-
-Navigation: go_router
+---
 
 ## Getting Started
-Prerequisites
 
-Flutter SDK installed
+### Prerequisites
+- Flutter SDK installed
+- Android Studio or VS Code configured
+- A Firebase project
+- A Cloudinary account (free tier)
 
-Android Studio or VS Code configured
+### Installation
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/TammyBriggs/Book-Swap-App.git
+    cd book_swap_app
+    ```
 
-A Firebase project
+2.  Install dependencies:
+    ```bash
+    flutter pub get
+    ```
 
-A Cloudinary account (free tier)
+### 🔥 Firebase Setup
+1.  Create a new Firebase project.
+2.  Enable **Authentication** (Email/Password).
+3.  Enable **Cloud Firestore** (start in Test Mode).
+4.  Run the following command and select your Firebase project:
+    ```bash
+    flutterfire configure
+    ```
 
-Installation
-1. Clone the repository
-   git clone https://github.com/YOUR_USERNAME/Book-Swap-App.git
-   cd book_swap_app
+### ☁️ Cloudinary Setup
+1.  Create a free account at [cloudinary.com](https://cloudinary.com/).
+2.  Go to **Settings → Upload → Add upload preset**.
+3.  Set **Signing Mode** to **Unsigned**.
+4.  Create a file named `lib/secrets.dart` (this file is gitignored for security):
+    ```dart
+    const String kCloudinaryCloudName = 'YOUR_CLOUD_NAME';
+    const String kCloudinaryUploadPreset = 'YOUR_UNSIGNED_PRESET_NAME';
+    ```
 
-2. Install dependencies
-   flutter pub get
-
-## Firebase Setup
-
-Create a new Firebase project.
-
-Enable Authentication (Email/Password).
-
-Enable Cloud Firestore (start in Test Mode).
-
-Run the following command and select your Firebase project:
-
-flutterfire configure
-
-## Cloudinary Setup
-
-Create a free account at cloudinary.com
-.
-
-Go to Settings → Upload → Add upload preset.
-
-Set Signing Mode to Unsigned.
-
-Create a file named lib/secrets.dart (this file is gitignored for security):
-
-const String kCloudinaryCloudName = 'YOUR_CLOUD_NAME';
-const String kCloudinaryUploadPreset = 'YOUR_UNSIGNED_PRESET_NAME';
-
-## Run the App
+### Run the App
+```bash
 flutter run
+```
 
-## Project Structure
-
+### Project Structure
 The app follows a feature-first clean architecture:
 
+```bash
 lib/
 ├── core/                   # Shared code (constants, widgets, router)
 ├── features/
@@ -122,13 +108,10 @@ lib/
 │   │   ├── domain/         # ChatMessage & ChatMetadata models
 │   │   ├── infrastructure/ # ChatRepository (Firestore)
 │   │   └── presentation/   # UI Screens (ChatScreen, ChatsOverview)
+```
 
-## Contributing
-
-Fork the repository
-
-Create a new branch (feature/your-feature-name)
-
-Commit your changes
-
-Open a Pull Request
+### Contributing
+- Fork the repository
+- Create a new branch (feature/your-feature-name)
+- Commit your changes
+- Open a Pull Request
