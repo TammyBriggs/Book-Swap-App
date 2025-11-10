@@ -49,50 +49,45 @@ Built with **Flutter**, **Firebase (Auth, Firestore)**, and **Cloudinary**.
 - A Cloudinary account (free tier)
 
 ### Installation
-1. Clone the repository:
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/TammyBriggs/Book-Swap-App.git
+    cd book_swap_app
+    ```
 
+2.  Install dependencies:
+    ```bash
+    flutter pub get
+    ```
+
+### 🔥 Firebase Setup
+1.  Create a new Firebase project.
+2.  Enable **Authentication** (Email/Password).
+3.  Enable **Cloud Firestore** (start in Test Mode).
+4.  Run the following command and select your Firebase project:
+    ```bash
+    flutterfire configure
+    ```
+
+### ☁️ Cloudinary Setup
+1.  Create a free account at [cloudinary.com](https://cloudinary.com/).
+2.  Go to **Settings → Upload → Add upload preset**.
+3.  Set **Signing Mode** to **Unsigned**.
+4.  Create a file named `lib/secrets.dart` (this file is gitignored for security):
+    ```dart
+    const String kCloudinaryCloudName = 'YOUR_CLOUD_NAME';
+    const String kCloudinaryUploadPreset = 'YOUR_UNSIGNED_PRESET_NAME';
+    ```
+
+### Run the App
 ```bash
-git clone https://github.com/YOUR_USERNAME/Book-Swap-App.git
-cd book_swap_app
-
-2. Install dependencies:
-```bash
-flutter pub get
-
-Firebase Setup
-Create a new Firebase project.
-
-Enable Authentication (Email/Password).
-
-Enable Cloud Firestore (start in Test Mode).
-
-Run the following command and select your Firebase project:
-
-bash
-Copy code
-flutterfire configure
-Cloudinary Setup
-Create a free account at cloudinary.com
-
-Go to Settings → Upload → Add upload preset
-
-Set Signing Mode to Unsigned
-
-Create a file named lib/secrets.dart (this file is gitignored for security):
-
-dart
-Copy code
-const String kCloudinaryCloudName = 'YOUR_CLOUD_NAME';
-const String kCloudinaryUploadPreset = 'YOUR_UNSIGNED_PRESET_NAME';
-Run the App
-bash
-Copy code
 flutter run
-Project Structure
+```
+
+### Project Structure
 The app follows a feature-first clean architecture:
 
-bash
-Copy code
+```bash
 lib/
 ├── core/                   # Shared code (constants, widgets, router)
 ├── features/
@@ -113,11 +108,10 @@ lib/
 │   │   ├── domain/         # ChatMessage & ChatMetadata models
 │   │   ├── infrastructure/ # ChatRepository (Firestore)
 │   │   └── presentation/   # UI Screens (ChatScreen, ChatsOverview)
-Contributing
-Fork the repository
+```
 
-Create a new branch (feature/your-feature-name)
-
-Commit your changes
-
-Open a Pull Request
+### Contributing
+- Fork the repository
+- Create a new branch (feature/your-feature-name)
+- Commit your changes
+- Open a Pull Request
